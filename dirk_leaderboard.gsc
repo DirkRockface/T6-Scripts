@@ -12,7 +12,7 @@
 #include maps\mp\gametypes_zm\_hud_message;
 #include scripts\zm\dirk_bank;
 
-init() // entry point
+init()
 {
     level endon( "end_game" );
     level thread onplayerconnect();
@@ -43,9 +43,9 @@ onplayerspawned()
 show_the_leaders(player, lang)
 {
     if(lang=="spanish")
-        player iprintln("^4<(^3DRF^4)>^7===^4<(^3DRF^4)>^7 Temporada 3 abla de clasificacion===");
+        player iprintln("^4<(^3DRF^4)>^7===^4<(^3DRF^4)>^7 Clasificación esta temporada===");
     else
-        player iprintln("^4<(^3DRF^4)>^7===^4<(^3DRF^4)>^7 Season 3 Leaderboard===");
+        player iprintln("^4<(^3DRF^4)>^7===^4<(^3DRF^4)>^7 Leaderboard this season===");
 
     for (i = 1; i < 4; i++)
     {
@@ -70,9 +70,9 @@ show_the_leaders(player, lang)
     }
     wait 2;
     if(lang=="spanish")
-        player iprintln("^4<(^3DRF^4)>^7===Temporada 3 tabla de clasificacion para este mapa===");
+        player iprintln("^4<(^3DRF^4)>^7===Tabla de clasificación esta temporada para este mapa===");
     else
-        player iprintln("^4<(^3DRF^4)>^7===This map's Season 3 Leaderboard===");
+        player iprintln("^4<(^3DRF^4)>^7===Leaderboard this season for this map===");
     for (i = 1; i < 4; i++)
     {
         map_leader_names[i] = leader_name_read("map", i);
@@ -91,6 +91,32 @@ show_the_leaders(player, lang)
                 player iprintln("^4<(^3DRF^4)>^3  "+i+". ^1" + map_leader_names[i] + "^7 con ^2" + player convert_to_thousands(map_leader_kills[i]) + "^7 matar");
             else
                 player iprintln("^4<(^3DRF^4)>^3  "+i+". ^1" + map_leader_names[i] + "^7 with ^2" + player convert_to_thousands(map_leader_kills[i]) + "^7 kills");
+            wait 1.5;
+        }
+    }
+    wait 2;
+    if(lang=="spanish")
+        player iprintln("^4<(^3DRF^4)>^7===Ronda alta esta temporada para este mapa===");
+    else
+        player iprintln("^4<(^3DRF^4)>^7===High Round this season for this map===");
+    for (i = 1; i < 4; i++)
+    {
+        round_leader_names[i] = leader_roundname_read("map", i);
+        if(round_leader_names[i]=="noleadername")
+        {
+            if(lang=="spanish")
+                player iprintln("^4<(^3DRF^4)>^3  "+i+". ^1Nadie");
+            else
+                player iprintln("^4<(^3DRF^4)>^3  "+i+". ^1Nobody");
+            wait 1.5;
+        }
+        else
+        {
+            round_leader_round[i] = leader_round_read("map", i);
+            if(lang=="spanish")
+                player iprintln("^4<(^3DRF^4)>^3  "+i+". ^1" + round_leader_names[i] + "^7 : Round ^2" + round_leader_round[i] + "^7");
+            else
+                player iprintln("^4<(^3DRF^4)>^3  "+i+". ^1" + round_leader_names[i] + "^7 : Round ^2" + round_leader_round[i] + "^7");
             wait 1.5;
         }
     }

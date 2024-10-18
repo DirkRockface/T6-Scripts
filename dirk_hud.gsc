@@ -13,8 +13,10 @@
 #include scripts\zm\dirk_weapon;
 
 
-init() // entry point
+init()
 {
+
+    precacheshader( "damage_feedback" ); 
     if(getDvarIntDefault( "testingstuff", 0 ))
     {
     //    level thread testingit();
@@ -35,6 +37,7 @@ onplayerconnect()
         player thread drawAmmoCounter();
         player thread drawZombieCounter();
         player thread drawZoneHud();
+        player thread killHud();
     }
 }
 
@@ -50,6 +53,27 @@ testingit()
     }
 }
 
+killHud()
+{
+    level waittill("end_game");
+    self.health_bar_name_text destroy();
+    self.health_bar destroy();
+    self.health_bar.bar destroy();
+    self.healthText destroy();
+    self.MaxhealthText destroy();
+//    self.sprint_bar destroy();
+//    self.sprint_bar.bar destroy();
+    self.ammo_text destroy();
+    self.lftclip_text destroy();
+    self.curclip_text destroy();
+    self.curammo_text destroy();
+    self.zombie_text destroy();
+    self.zombie_counter destroy();
+    self.the_zone_text destroy();
+    self.hud_zombie_health destroy();
+    self.hud_zombie_health.bar destroy();
+}
+
 onplayerspawned()
 {
     
@@ -58,12 +82,17 @@ onplayerspawned()
     for(;;)
     {
         self waittill("spawned_player");
+        self maps\mp\zombies\_zm_spawner::register_zombie_damage_callback(::do_hitmarker);
+        self maps\mp\zombies\_zm_spawner::register_zombie_death_event_callback(::do_hitmarker_death);
 //        self thread doGetposition();
+//        self thread drawdamagehitmarker();
+        self.hitmarkvisible = true;
         self.hudvisible  = true;
         self.healthvisible = true;
         self.ammovisible = true;
         self.zombiesvisible = true;
         self.zonevisibile = true;
+        self.zombiehealthvisible = true;
         self.nadesslot = array(0,0,0,0,0,0,0,0);
     }
 }
@@ -102,6 +131,7 @@ toggle_hud()
         self.ammovisible = false;
         self.zonevisible = false;
         self.hudvisible = false;
+        self.zombiehealthvisible = false;
     }
     else
     {
@@ -110,7 +140,16 @@ toggle_hud()
         self.ammovisible = true;
         self.zonevisible = true;
         self.hudvisible = true;
+        self.zombiehealthvisible = true;
     }
+}
+
+toggle_hitmark()
+{
+    if(self.hitmarkvisible)
+        self.hitmarkvisible = false;
+    else
+        self.hitmarkvisible = true;
 }
 
 toggle_health()
@@ -138,6 +177,7 @@ toggle_zombies()
     if(self.zombiesvisible)
     {
         self.zombiesvisible = false;
+        self.zombiehealthvisible = false;
         if(!self.healthvisible && !self.ammovisible && !self.zonevisible)
         {
             self.hudvisible = false;
@@ -146,6 +186,7 @@ toggle_zombies()
     else
     {
         self.zombiesvisible = true;
+        self.zombiehealthvisible = true;
         if(self.healthvisible && self.ammovisible && self.zonevisible)
         {
             self.hudvisible = true;
@@ -193,6 +234,68 @@ toggle_zone()
     }
 }
 
+
+
+drawdamagehitmarker()
+{
+    self thread startwaiting();
+    self.hitmarker = newdamageindicatorhudelem( self );
+    self.hitmarker.horzalign = "center";
+    self.hitmarker.vertalign = "middle";
+    self.hitmarker.x = -12;
+    self.hitmarker.y = -12;
+    self.hitmarker.alpha = 0;
+    self.hitmarker setshader( "damage_feedback", 24, 48 );
+}
+	
+	
+startwaiting()
+{
+	while( 1 )
+	{
+        foreach( zombie in getaiarray( level.zombie_team ) )
+        {
+            if( !(IsDefined( zombie.waitingfordamage )) )
+            {
+                zombie thread hitmark();
+            }
+        }
+        wait 0.25;
+	}
+}
+
+
+hitmark()
+{
+	self endon( "killed" );
+	self.waitingfordamage = 1;
+	while( 1 )
+	{
+		self waittill( "damage", amount, attacker, dir, point, mod );
+		attacker.hitmarker.alpha = 0;
+		if( isplayer( attacker ) )
+		{
+			if( isalive( self ) )
+			{
+				attacker.hitmarker.color = ( 1, 1, 1 );
+				attacker.hitmarker.alpha = 1;
+				attacker.hitmarker fadeovertime( 1 );
+				attacker.hitmarker.alpha = 0;
+			}
+			else
+			{
+				attacker.hitmarker.color = ( 1, 0, 0 );
+                attacker.hitmarker.alpha = 1;
+				attacker.hitmarker fadeovertime( 1 );
+				attacker.hitmarker.alpha = 0;
+				self notify( "killed" );
+			}
+		}
+	}
+}	
+
+
+
 drawHealthCounter()
 {
     level endon("end_game");
@@ -217,26 +320,26 @@ drawHealthCounter()
     self.MaxhealthText setPoint("LEFT", "BOTTOM", 51, -14);
     self.MaxhealthText.label = &"/";    
 
-    self.sprint_bar = self createprimaryprogressbar();
-    self.sprint_bar.width = 100;
-    self.sprint_bar.height = 1;
-    self.sprint_bar setpoint ("CENTER", "BOTTOM", -18, -11);
+//    self.sprint_bar = self createprimaryprogressbar();
+//    self.sprint_bar.width = 100;
+//    self.sprint_bar.height = 1;
+//    self.sprint_bar setpoint ("CENTER", "BOTTOM", -18, -11);
 
-    self.sprintcount = 3.5;
+//    self.sprintcount = 3.5;
 
     while(true)
     {
         if(self.healthvisible)
         {
             self.health_bar.alpha = 0;
-            self.sprint_bar.alpha = 0;
+//            self.sprint_bar.alpha = 0;
             self.health_bar_name_text.alpha = 1;
             self.health_bar.bar.alpha = 1;
             self.health_bar.barframe.alpha = 1;
             self.healthText.alpha = 1;
             self.MaxhealthText.alpha = 1;
-            self.sprint_bar.bar.alpha = 1;
-            self.sprint_bar.barframe.alpha =1;
+//            self.sprint_bar.bar.alpha = 1;
+//            self.sprint_bar.barframe.alpha =1;
 
             self.healthText setValue(self.health);
             self.MaxhealthText setValue(self.maxhealth);
@@ -245,7 +348,7 @@ drawHealthCounter()
 
             self.health_bar updatebar(self.health / self.maxhealth);
 
-            self.sprint_bar updatebar(self.sprintcount / self.maxsprintcount);
+//            self.sprint_bar updatebar(self.sprintcount / self.maxsprintcount);
 
             if(self.ScaleHealth <= 100 && self.ScaleHealth >= 71)
             {
@@ -276,42 +379,42 @@ drawHealthCounter()
                 self.health_bar_name_text.color = (1, 0.2, 0.2);
             }
 
-            if(self hasperk("specialty_longersprint"))
-            {
-                self.maxsprintcount = 7.0;
-            }
-            else{
-                self.maxsprintcount = 3.5;
-            }
+//            if(self hasperk("specialty_longersprint"))
+//            {
+//                self.maxsprintcount = 7.0;
+//            }
+//            else{
+//                self.maxsprintcount = 3.5;
+//            }
 
-            if(self issprinting() && self.sprintcount > 0)
-            {
-                self.sprintcount = self.sprintcount - .1;
-                wait .05;
-            }
-            else if(self.sprintcount < .5)
-            {
-                self.sprintcount = self.sprintcount + .05;
-                wait .05;
-            }
-            else if(self.sprintcount < self.maxsprintcount)
-            {
-                self.sprintcount = self.sprintcount + .1;
-                wait .05;
-            }
+//            if(self issprinting() && self.sprintcount > 0)
+//            {
+//                self.sprintcount = self.sprintcount - .1;
+//                wait .05;
+//            }
+//            else if(self.sprintcount < .5)
+//            {
+//                self.sprintcount = self.sprintcount + .05;
+//                wait .05;
+//            }
+//            else if(self.sprintcount < self.maxsprintcount)
+//            {
+//                self.sprintcount = self.sprintcount + .1;
+//                wait .05;
+//            }
 
         }
         else
         {
             self.health_bar.alpha = 0;
-            self.sprint_bar.alpha = 0;
+//            self.sprint_bar.alpha = 0;
             self.health_bar_name_text.alpha = 0;
             self.health_bar.bar.alpha = 0;
             self.health_bar.barframe.alpha = 0;
             self.healthText.alpha = 0;
             self.MaxhealthText.alpha = 0;
-            self.sprint_bar.bar.alpha = 0;
-            self.sprint_bar.barframe.alpha = 0;
+//            self.sprint_bar.bar.alpha = 0;
+//            self.sprint_bar.barframe.alpha = 0;
         }
         
         wait 0.005;
@@ -439,31 +542,11 @@ drawAmmoCounter()
                 self.currentweapon = self getcurrentweapon();
             }
 
-/*            if( self.is_drinking )
-            {
-                self.drinkup++;
-                if( self.drinkup < 16 )
-                {
-                    self.predrinktotal = self.num_perks;
-                    self.CurrClip = self.predrinktotal;
-                }
-                else
-                {
-                    self.CurrClip = self.predrinktotal+1;
-                }
-                self.FullClip = 4;
+            self.FullClip = weaponclipsize(self.currentweapon);
+            self.CurrClip = self GetWeaponAmmoClip(self.currentweapon);
+            self.FullStock = weaponmaxammo(self.currentweapon);
+            self.CurrStock = self GetWeaponAmmoStock(self.currentweapon);
 
-                self.FullStock = 4;
-                self.CurrStock = level.perk_purchase_limit;
-            }      
-            else
-            { */
-                self.FullClip = weaponclipsize(self.currentweapon);
-                self.CurrClip = self GetWeaponAmmoClip(self.currentweapon);
-                self.FullStock = weaponmaxammo(self.currentweapon);
-                self.CurrStock = self GetWeaponAmmoStock(self.currentweapon);
-//                self.drinkup=0;
-//            }
             if(weaponisdualwield(self.currentweapon))
             {
                 self.dw_weapon = weapondualwieldweaponname(self.currentweapon);
@@ -567,7 +650,7 @@ drawZombieCounter()
     self.zombie_text setText("Zombies");
 
     self.zombie_counter = createFontString( "hudsmall", 1 );
-    self.zombie_counter setpoint( "RIGHT", "BOTTOM", -170, -13 );
+    self.zombie_counter setpoint( "RIGHT", "BOTTOM", -130, -24 );   //-160, -13
     self.zombie_counter.alpha = 1;
     self.zombie_counter.hidewheninmenu = 1;
     self.zombie_counter.hidewhendead = 1;
@@ -625,6 +708,126 @@ drawZoneHud()
             self.the_zone_text.alpha = 0;
         }
         wait 0.1;
+    }
+}
+
+updatedamagefeedback( mod, inflictor, death )
+{
+    if( IsDefined( self.disable_hitmarkers ) || !(isplayer( self )) )
+    {
+        return;
+    }
+
+    if( mod != "MOD_HIT_BY_OBJECT" && mod != "MOD_GRENADE_SPLASH" && mod != "MOD_CRUSH" && IsDefined( mod ) )
+    {
+        if( death )
+        {
+            self hud_show_zombie_health(self.targetZombie, true);
+        }
+        else
+        {
+
+        }
+
+        if (IsDefined(self.targetZombie) && isalive(self.targetZombie))
+        {
+            self hud_show_zombie_health(self.targetZombie, false);
+        }
+    }
+    return 0;
+}
+
+do_hitmarker_death()
+{
+    if( self.attacker != self && isplayer( self.attacker ) && IsDefined( self.attacker ) )
+    {
+        self.attacker thread updatedamagefeedback( self.damagemod, self.attacker, 1 );
+    }
+    return 0;
+}
+
+do_hitmarker( mod, hitloc, hitorig, player, damage )
+{
+    if( player != self && isplayer( player ) && IsDefined( player ) )
+    {
+        player.targetZombie = self;
+        player thread updatedamagefeedback( mod, player, 0 );
+    }
+    return 0;
+}
+hud_show_zombie_health(zombie, isDead)
+{
+    self endon("disconnect");
+    level endon("end_game");
+
+    if (!isdefined(zombie))
+        return;
+    if (!isdefined(self.hud_zombie_health))
+    {
+        self.hud_zombie_health = self createprimaryprogressbar();        
+        self.hud_zombie_health setpoint( "RIGHT", "BOTTOM", -75, -13 );
+        self.hud_zombie_health.hidewheninmenu = false;
+
+        self thread configbar();
+
+    }
+
+    zombieIndex = -1;
+    zombieArray = getaiarray(level.zombie_team);
+    for (i = 0; i < zombieArray.size; i++)
+    {
+        if (zombieArray[i] == zombie)
+        {
+            zombieIndex = i;
+            break;
+        }
+    }
+
+    if (isDead)
+    {
+        self.hud_zombie_health updatebar(0);
+        self.hud_zombie_health.bar.color = (1, 0.2, 0.2);
+    }
+    else
+    {
+        totalHealth = zombie.maxhealth;
+        damageInflicted = totalHealth - zombie.health;
+        healthFraction = zombie.health / totalHealth;
+        healthFractionColor = healthFraction * 100;
+        self.hud_zombie_health updatebar(healthFraction);
+        if(healthFractionColor <= 100 && healthFractionColor >= 71)
+            self.hud_zombie_health.bar.color = (0, 1, 0.5);
+        else if(healthFractionColor <= 70 && healthFractionColor >= 50)
+            self.hud_zombie_health.bar.color = (1, 1, 0);
+        else if(healthFractionColor <= 49 && healthFractionColor >= 25)
+            self.hud_zombie_health.bar.color = (1, 0.5, 0);
+        else if(healthFractionColor <= 24 && healthFractionColor >= 0)
+            self.hud_zombie_health.bar.color = (1, 0.2, 0.2);
+    }
+
+    if (!isDead && zombie.health == zombie.maxhealth)
+    {
+        self.hud_zombie_health fadeovertime(1.5);
+        self.hud_zombie_health.alpha = 0;
+        wait 1.5;
+        self.hud_zombie_health destroy();
+        self.hud_zombie_health = undefined;
+    }
+}
+configbar()
+{
+    self endon("disconnect");
+    level endon("end_game");
+    while(true)
+    {
+        self.hud_zombie_health.width = 75; 
+        self.hud_zombie_health.height = 3;
+        self.hud_zombie_health.alpha = 0;
+        if(self.zombiehealthvisible)
+            self.hud_zombie_health.bar.alpha = 1;
+        else
+            self.hud_zombie_health.bar.alpha = 0;
+        wait 1;
     }
 }
 

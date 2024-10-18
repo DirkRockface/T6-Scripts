@@ -7,6 +7,7 @@
 #include maps\mp\zombies\_zm_unitrigger;
 #include maps\mp\zombies\_zm_utility;
 #include maps\mp\_zm_tomb_capture_zones;
+
 init()
 {
 	level endon( "end_game");
@@ -534,7 +535,6 @@ custom_treasure_chest_weapon_spawn( chest, player, respin )
 		player.nextspiniscustom = false;
 	}
 
-	//rand = "ray_gun_zm";
     self.weapon_string = rand;
     wait 0.1;
 

@@ -12,7 +12,7 @@
 #include maps\mp\gametypes_zm\_hud_message;
 #include scripts\zm\dirk_casino;
 
-init() // entry point
+init()
 {
     level endon( "end_game" );
     level thread onplayerconnect();
@@ -24,6 +24,7 @@ onplayerconnect()
     {
         level waittill("connected", player);
         player thread onplayerspawned();
+        player.can_i_pause = true;
     }
 }
 
@@ -60,15 +61,16 @@ go_afk(lang, time, prize)
             else
                 self iprintln("^4<(^3DRF^4)>^1YOU ARE ALREADY PAUSED!");
         }
-//        else if(time==600)
-//        {
-//            self thread drawPauseTimer(time, lang, 1);
-//        }
         else
         {
-            if(time==60)
-                self.numberofpausesleft--;
-            self thread drawPauseTimer(time, lang, 0);
+            if(self.can_i_pause)
+            {
+                if(time==60)
+                    self.numberofpausesleft--;
+                self thread drawPauseTimer(time, lang, 0);
+            }
+            else
+                self iprintln("^4<(^3DRF^4)>^1NICE TRY!");  
         }
     }
     else

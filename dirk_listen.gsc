@@ -94,6 +94,9 @@ commandthread()
 			case ".balance":
 				balance_logic(player);
 				break;
+			case ".tog_m":
+				player toggle_hitmark();
+				break;
 			case ".tog_h":
 			 	player toggle_health();
 				break;
@@ -128,9 +131,9 @@ commandthread()
 			case ".pausar":
 				player thread go_afk("spanish", 60, 0);
 				break;
-			//case ".testing":
-			//	player thread go_afk("english", 600, 0);
-			//	break;
+			case ".testing":
+				player thread go_afk("english", 600, 0);
+				break;
             case ".back":
 			case ".reanudar":
 				player thread back_afk();

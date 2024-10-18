@@ -1,8 +1,21 @@
+#include maps\mp\_utility;
+#include common_scripts\utility;
+#include maps\mp\gametypes_zm\_hud_util;
+#include maps\mp\zombies\_zm;
+#include maps\mp\zombies\_zm_utility;
+#include maps\mp\zombies\_zm_weapons;
+#include maps\mp\zombies\_zm_stats;
+#include maps\mp\gametypes_zm\_hud_message;
+#include maps\mp\zombies\_zm_powerups;
+#include maps\mp\zombies\_zm_perks;
+#include maps\mp\zombies\_zm_audio;
+#include maps\mp\zombies\_zm_score;
 #include scripts\zm\dirk_welcome;
 
 init()
 {
 	level thread onplayerconnect();
+	thread init_stat_dvars();
 	thread init_folder_structure();
 	level thread auto_deposit_on_end_game();
 	level thread auto_updatekills_on_end_game();
@@ -21,6 +34,7 @@ onplayerconnect()
 		bankfile = player get_bank_filename();
 		allkillfile = player get_allkill_filename();
 		mapkillfile = player get_mapkill_filename();
+		maproundfile = player get_mapround_filename();
 		if(!fileExists(namefile))
             player create_name_file(namefile);
 		if(!fileExists(bankfile))							//if a dirk_bank file does not exists
@@ -30,7 +44,7 @@ onplayerconnect()
 
 		if(!fileExists(allkillfile) && fileExists(namefile))	//if the name exists but a kill file doesn't that means the season reset (kill files were moved to season folder)
 		{
-			player iprintln("^4<(^3DRF^4)>^7Season 2 archived!");
+			player iprintln("^4<(^3DRF^4)>^7Previous season archived!");
 			player iprintln("^4<(^3DRF^4)>^7Kill stats reset. New season, new leaderboard!");
 			wait 2;
 		}
@@ -38,13 +52,18 @@ onplayerconnect()
 			create_kill_file(allkillfile);
 		if(!fileExists(mapkillfile))
 			create_kill_file(mapkillfile);
+		if(!fileExists(maproundfile))
+			create_round_file(maproundfile);
 
 		all_kills = player all_kill_read();
 		map_kills = player map_kill_read();
+		map_round = player map_round_read();
 		wait 1.5;
 		player iprintln("^4<(^3DRF^4)>^7You have killed ^2" + player convert_to_thousands(all_kills) + "^7 zombies on ^4<(^3DRF^4)>^7 servers this season!");
 		wait 1.5;
 		player iprintln("^4<(^3DRF^4)>^7You have killed ^2" + player convert_to_thousands(map_kills) + "^7 zombies on this map this season!");
+		wait 1.5;
+		player iprintln("^4<(^3DRF^4)>^7You have made it as high as round ^2" + map_round + "^7 on this map this season!");
 	}
 }
 
@@ -60,8 +79,21 @@ onplayerspawned()
     }
 }
 
+init_stat_dvars()
+{
+	level.earn_round_for_rank = getDvarIntDefault( "earnroundforrank", 1 );
+	level.earn_point_for_bank = getDvarIntDefault( "earnpointforbank", 1 );
+	level.earn_kills_for_rank = getDvarIntDefault( "earnkillsforrank", 1 );
+}
+
 init_folder_structure()
 {
+	level.statsfolderhardcoded = getDvarIntDefault( "hardcodestats", 0 );
+	if(level.statsfolderhardcoded)
+		level.mapnameforstats = getdvar("mapnameforstats");
+	else
+		level.mapnameforstats = level.scr_zm_map_start_location;
+
 	name_folder = "custstats/name";
 	if (!directoryExists(name_folder))
         createDirectory(name_folder);
@@ -74,7 +106,8 @@ init_folder_structure()
 	if (!directoryExists(allstats_folder))
         createDirectory(allstats_folder);
 
-    mapstats_folder = "custstats/" + getdvar("mapnameforstats");
+	mapstats_folder = "custstats/" + level.mapnameforstats;
+
 	if (!directoryExists(mapstats_folder))
         createDirectory(mapstats_folder);
 
@@ -86,25 +119,20 @@ init_folder_structure()
 	if (!directoryExists(all_leaders_folder))
         createDirectory(all_leaders_folder);
 
-    map_rankings_folder = "custstats/" + getdvar("mapnameforstats") + "/rankings";
+	map_rankings_folder = "custstats/" + level.mapnameforstats + "/rankings";
 	if (!directoryExists(map_rankings_folder))
         createDirectory(map_rankings_folder);
 
-    map_leaders_folder = "custstats/" + getdvar("mapnameforstats") + "/leaders";
+	map_leaders_folder = "custstats/" + level.mapnameforstats + "/leaders";
 	if (!directoryExists(map_leaders_folder))
         createDirectory(map_leaders_folder);
-	
-	level.mapnameforstats = getdvar("mapnameforstats");
+
 }
 
 get_user_filename()
 {
 	self.guidnumber = self getGuid();
-	if(!isdefined(self.guidnumber))
-	{
-		printf("Guid not defined at 1");
-		self.guidnumber = self getGuid();
-	}
+
 	path = "custstats/name/" + self.guidnumber + ".name";
 	return path;
 }
@@ -112,11 +140,7 @@ get_user_filename()
 get_bank_filename()
 {
 	self.guidnumber = self getGuid();
-	if(!isdefined(self.guidnumber))
-	{
-		printf("Guid not defined at 2");
-		self.guidnumber = self getGuid();
-	}
+
 	path = "custstats/bank/" + self.guidnumber + ".bank";
 	return path;
 }
@@ -124,16 +148,7 @@ get_bank_filename()
 get_mapkill_filename()
 {
 	self.guidnumber = self getGuid();
-	if(!isdefined(self.guidnumber))
-	{
-		printf("Guid not defined at 3");
-		self.guidnumber = self getGuid();
-	}
-	if(!isdefined(level.mapnameforstats))
-	{
-		printf("MapName not defined");
-		level.mapnameforstats = getdvar("mapnameforstats");
-	}
+
 	path = "custstats/" + level.mapnameforstats + "/" + self.guidnumber + ".kill";
 	return path;
 }
@@ -141,28 +156,23 @@ get_mapkill_filename()
 get_allkill_filename()
 {
 	self.guidnumber = self getGuid();
-	if(!isdefined(self.guidnumber))
-	{
-		printf("Guid not defined at 4");
-		self.guidnumber = self getGuid();
-	}
-	if(!isdefined(level.mapnameforstats))
-	{
-		printf("MapName not defined");
-		level.mapnameforstats = getdvar("mapnameforstats");
-	}
+
 	path = "custstats/all/" + self.guidnumber + ".kill";
+	return path;
+}
+
+get_mapround_filename()
+{
+	self.guidnumber = self getGuid();
+
+	path = "custstats/" + level.mapnameforstats + "/" + self.guidnumber + ".round";
 	return path;
 }
 
 get_rank_filename(loc)
 {
 	self.guidnumber = self getGuid();
-	if(!isdefined(self.guidnumber))
-	{
-		printf("Guid not defined at 5");
-		self.guidnumber = self getGuid();
-	}
+
 	if(loc=="map")
 		return "custstats/" + level.mapnameforstats + "/rankings/" + self.guidnumber + ".txt";
 	else
@@ -177,12 +187,28 @@ get_leader_name_filename(loc, i)
 		return "custstats/all/leaders/" + i + ".name";
 }
 
+get_leader_roundname_filename(loc, i)
+{
+	if(loc=="map")
+		return "custstats/" + level.mapnameforstats + "/rounds/" + i + ".name";
+	else
+		return "custstats/all/round/" + i + ".name";
+}
+
 get_leader_kill_filename(loc, i)
 {
 	if(loc=="map")
 		return "custstats/" + level.mapnameforstats + "/leaders/" + i + ".kill";
 	else
 		return "custstats/all/leaders/" + i + ".kill";
+}
+
+get_leader_round_filename(loc, i)
+{
+	if(loc=="map")
+		return "custstats/" + level.mapnameforstats + "/rounds/" + i + ".round";
+	else
+		return "custstats/all/round/" + i + ".round";
 }
 
 check_name_file()
@@ -222,6 +248,11 @@ create_kill_file(name)
 	writeFile(name, "0");
 }
 
+create_round_file(name)
+{
+	writeFile(name, "1");
+}
+
 check_bank_balance(name)
 {
 	value = int(readFile(name));																						//		then read the bank file
@@ -241,13 +272,19 @@ kill_write(all_value, map_value)
     all_name = self get_allkill_filename();
 	all_name_string = ""+all_name+"";
 	all_string = ""+all_value+"";
-//	printf("all file: " +all_name_string);
+
     writeFile(all_name_string, all_string);
 	map_name = self get_mapkill_filename();
 	map_name_string = ""+map_name+"";
 	map_string = ""+map_value+"";
-//	printf("map file: " +map_name_string);
+
 	writeFile(map_name_string, map_string);
+}
+
+round_write(value)
+{
+	map_name = self get_mapround_filename();
+	writeFile(map_name, ""+value+"");
 }
 
 bank_read()
@@ -285,6 +322,18 @@ map_kill_read()
     return int(readFile(name));
 }
 
+map_round_read()
+{
+    name = self get_mapround_filename();
+    if(!fileExists(name))
+	{
+		self create_round_file(name);
+		self check_name_file();
+		return 1;
+	}
+    return int(readFile(name));
+}
+
 rank_read(loc)
 {
     name = self get_rank_filename(loc);
@@ -309,6 +358,22 @@ leader_kill_read(loc, i)
     return readFile(name);
 }
 
+leader_roundname_read(loc, i)
+{
+	name = self get_leader_roundname_filename(loc, i);
+	if(!fileExists(name))
+		return "noleadername";
+	return readFile(name);
+}
+
+leader_round_read(loc, i)
+{
+    name = self get_leader_round_filename(loc, i);
+    if(!fileExists(name))
+        return "0";
+    return readFile(name);
+}
+
 bank_add(value)
 {
     current = self bank_read();
@@ -322,6 +387,14 @@ kill_add(value)
     self kill_write(all_current + value, map_current + value);
 }
 
+round_update(value)
+{
+	round_current = self map_round_read();
+	if(value > round_current)
+		round_write(value);
+
+}
+
 bank_sub(value)
 {
     current = self bank_read();
@@ -331,17 +404,22 @@ bank_sub(value)
 auto_deposit_on_end_game()
 {
 	level waittill("end_game");
-	wait 1;
-	foreach(player in level.players)
-		player deposit_logic("all");
+	if(level.earn_point_for_bank)
+	{
+		foreach(player in level.players)
+			player deposit_logic(player, "all");
+	}
 }
 
 auto_updatekills_on_end_game()
 {
 	level waittill("end_game");
 	wait 1;
-	foreach(player in level.players)
-		player update_the_kills_now();
+	if(level.earn_kills_for_rank)
+	{
+		foreach(player in level.players)
+			player update_the_kills_now();
+	}
 }
 
 update_the_kills_now()
@@ -359,96 +437,116 @@ auto_updatekills()
 		level waittill("end_of_round");
 		wait 1;
 		foreach(player in level.players)
-			player update_the_kills_round();
+			player update_the_stats_round();
 		wait 1;
 	}
 }
 
-update_the_kills_round()
+update_the_stats_round()
 {
 	if(!isDefined(self.old_kill_total))
 		self.old_kill_total = 0;
 	if(!isDefined(self.new_kill_total))
 		self.new_kill_total = 0;
-	self.new_kill_total = int(self.kills) - self.old_kill_total;
-	self kill_add(self.new_kill_total);
-	self.old_kill_total += self.new_kill_total;
-	self iPrintLn( "^4<(^3DRF^4)>^7Added " + self.new_kill_total + " kills!");
+	if(level.earn_kills_for_rank)
+	{
+		self.new_kill_total = int(self.kills) - self.old_kill_total;
+		self kill_add(self.new_kill_total);
+		self.old_kill_total += self.new_kill_total;
+		self iPrintLn( "^4<(^3DRF^4)>^7Added " + self.new_kill_total + " kills!");
+	}
+	if(level.earn_round_for_rank)
+		self round_update(level.round_number);
 }
 
 withdraw_logic(player, amount)
 {
-	balance = int(player bank_read());
-	if(balance <= 0)
+	if(level.earn_point_for_bank)
 	{
-		player iPrintln("^4<(^3DRF^4)>^7Withdraw failed: you have no money in the bank");
-		return;
-	}
-	if(player.score >= 1000000)
-	{
-		player iPrintLn("^4<(^3DRF^4)>^7Withdraw failed: Max score is ^1$^21,000,000.");
-		return;
-	}
-	if(!isDefined(amount))
-	{
-		player iPrintLn("^4<(^3DRF^4)>^7Usage ^3.w number ^7or ^3.w all");
-		return;
-	}
-	num_score = int(player.score);
-	num_amount = int(amount);
-	if(tolower(amount) == "all" || tolower(amount) == "todo" || tolower(amount) == "toda")
-		num_amount = balance;
-	else if(num_amount > 0)
-		num_amount = num_amount;
-	else 
-	{
-		player iPrintLn("^4<(^3DRF^4)>^7Usage ^3.w number ^7or ^3.w all");
-		return;
-	}
+		balance = int(player bank_read());
+		if(balance <= 0)
+		{
+			player iPrintln("^4<(^3DRF^4)>^7Withdraw failed: you have no money in the bank");
+			return;
+		}
+		if(player.score >= 1000000)
+		{
+			player iPrintLn("^4<(^3DRF^4)>^7Withdraw failed: Max score is ^1$^21,000,000.");
+			return;
+		}
+		if(!isDefined(amount))
+		{
+			player iPrintLn("^4<(^3DRF^4)>^7Usage ^3.w number ^7or ^3.w all");
+			return;
+		}
+		num_score = int(player.score);
+		num_amount = int(amount);
+		if(tolower(amount) == "all" || tolower(amount) == "todo" || tolower(amount) == "toda")
+			num_amount = balance;
+		else if(num_amount > 0)
+			num_amount = num_amount;
+		else 
+		{
+			player iPrintLn("^4<(^3DRF^4)>^7Usage ^3.w number ^7or ^3.w all");
+			return;
+		}
 
-	if(num_amount > balance)								//max withdraw is entire balance
-		num_amount = balance;
-	
-	over_balance = num_score + num_amount - 1000000; 		//withdraw can't put you over 1,000,000 so check how much over you would be
-	max_score_available = abs( num_score - 1000000 );		//and check the most you can take out
-	if(over_balance > 0)									//if you have an over balance
-		num_amount = max_score_available;					//set the withdraw to max allowed to take out
-	
-	player bank_sub(num_amount);
-	player.score += num_amount;
-	player iPrintLn("^4<(^3DRF^4)>^7Successfuly withdrew ^1" + convert_to_money(num_amount));
+		if(num_amount > balance)								//max withdraw is entire balance
+			num_amount = balance;
+		
+		over_balance = num_score + num_amount - 1000000; 		//withdraw can't put you over 1,000,000 so check how much over you would be
+		max_score_available = abs( num_score - 1000000 );		//and check the most you can take out
+		if(over_balance > 0)									//if you have an over balance
+			num_amount = max_score_available;					//set the withdraw to max allowed to take out
+		
+		player bank_sub(num_amount);
+		player.score += num_amount;
+		player iPrintLn("^4<(^3DRF^4)>^7Successfuly withdrew ^1" + convert_to_money(num_amount));
+	}
+	else
+	{
+		player iPrintLn("^4<(^3DRF^4)>^7Bank not enabled this session");
+	}
 }
 
 deposit_logic(player, amount)
 {
-	if(player.score <= 0)
+	if(level.earn_point_for_bank)
 	{
-		player iPrintLn("^4<(^3DRF^4)>^7Deposit failed: Not enough money");
-		return;
+		if(player.score <= 0)
+		{
+			player iPrintLn("^4<(^3DRF^4)>^7Deposit failed: Not enough money");
+			return;
+		}
+		if(!isDefined(amount))
+		{
+			player iPrintLn("^4<(^3DRF^4)>^7Usage ^3.d number ^7or ^3.d all");
+			return;
+		}
+		num_score = int(player.score);
+		num_amount = int(amount);
+		if(tolower(amount) == "all" || tolower(amount) == "todo" || tolower(amount) == "toda")
+			num_amount = num_score;
+		else if(num_amount > 0)
+			num_amount = num_amount;
+		else 
+		{
+			player iPrintLn("^4<(^3DRF^4)>^7Usage ^3.d number ^7or ^3.d all");
+			return;
+		}
+
+		if(num_amount > num_score)								//max deposit is entire score
+			num_amount = num_score;
+
+		player bank_add(num_amount);
+		player.score -= num_amount;
+		player iPrintLn("^4<(^3DRF^4)>^7Successfully deposited ^1" + convert_to_money(num_amount));
 	}
-	if(!isDefined(amount))
+	else
 	{
-		player iPrintLn("^4<(^3DRF^4)>^7Usage ^3.d number ^7or ^3.d all");
-		return;
-	}
-	num_score = int(player.score);
-	num_amount = int(amount);
-	if(tolower(amount) == "all" || tolower(amount) == "todo" || tolower(amount) == "toda")
-		num_amount = num_score;
-	else if(num_amount > 0)
-		num_amount = num_amount;
-	else 
-	{
-		player iPrintLn("^4<(^3DRF^4)>^7Usage ^3.d number ^7or ^3.d all");
-		return;
+		player iPrintLn("^4<(^3DRF^4)>^7Bank not enabled this session");
 	}
 
-	if(num_amount > num_score)								//max deposit is entire score
-		num_amount = num_score;
-
-	player bank_add(num_amount);
-	player.score -= num_amount;
-	player iPrintLn("^4<(^3DRF^4)>^7Successfully deposited ^1" + convert_to_money(num_amount));
 }
 
 transfer_logic(player, amount, targetplayer)

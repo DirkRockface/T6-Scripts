@@ -26,7 +26,6 @@ onplayerspawned()
     for(;;)
     {
         self waittill("spawned_player");
-        self thread weaponcheat();
     }
 }
 

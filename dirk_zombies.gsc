@@ -28,6 +28,7 @@ onPlayerConnect()
 		player thread onPlayerSpawned();
 		player thread spawnIfRoundOneOrTwo();
 		player thread waitForTheNuke();
+		player thread waitForTheMaxAmmo();
 	}
 }
 
@@ -43,8 +44,17 @@ onPlayerSpawned()
 
 initServerDvars()
 {
+	level.player_starting_points = getDvarIntDefault( "playerStartingPoints", 500 );            //sets player starting points
 	level.perk_purchase_limit = getDvarIntDefault( "perkLimit", 4 );                            //sets the perk limit for all players
 	level.zombie_ai_limit = getDvarIntDefault( "zombieAiLimit", 24 );                           //sets the maximum number of zombies that can be on the map at once 32 max
+	level.disableWalkers = getDvarIntDefault( "disableWalkers", 0 );                            //sets walkers or no walkers
+	if ( level.disableWalkers )
+	{
+		level.speed_change_round = undefined;
+	}
+	level.drfZombieSpawnRate = getDvarFloatDefault( "drfZombieSpawnRate", 2 );                    //sets zombie spawn rate; max is 0.08 this is in seconds
+	level.zombie_vars[ "zombie_spawn_delay" ] = level.drfZombieSpawnRate;
+	//level.mixed_rounds_enabled = getDvarIntDefault( "midroundDogs", 1 );                        //enables hellhounds WARNING don't use on maps that aren't bus, town, or farm or fix to override
 	level.default_solo_laststandpistol = getDvar( "soloLaststandWeapon" );                      //sets the solo laststand pistol
 	level.default_laststandpistol = getDvar( "coopLaststandWeapon" );                           //the default laststand pistol
 	level.start_weapon = getDvar( "startWeaponZm" );                                            //set the starting weapon
@@ -112,7 +122,13 @@ checks()
 			level.default_solo_laststandpistol = "c96_upgraded_zm";
 		}
 	}
-
+//	if ( level.mixed_rounds_enabled )
+//	{
+//		if ( level.script != "zm_transit" || is_classic() || level.scr_zm_ui_gametype == "zgrief" )
+//		{
+//			level.mixed_rounds_enabled = 0;
+//		}
+//	}
 }
 
 disable_specific_powerups()
@@ -208,6 +224,36 @@ giveBetterNukePoints()
 		foreach ( player in level.players )
         {
         	player.score += points;
+        }
+        wait 0.02;
+    }
+}
+
+waitForTheMaxAmmo()
+{
+	self thread giveBetterMaxAmmo();
+}
+
+giveBetterMaxAmmo()
+{
+	while(true)
+	{
+		self waittill("zmb_max_ammo");
+		iprintln("^4<(^3DRF^4)>^7Max Ammo Stock and Clip!");
+		foreach ( player in level.players )
+        {
+			currentWeapon = self getcurrentweapon();
+			if ( currentWeapon != "none" )
+        	{
+	            self setweaponammoclip( currentWeapon, weaponclipsize(currentWeapon) );
+	            self givemaxammo( currentWeapon );
+	        }
+
+	        currentoffhand = self getcurrentoffhand();
+	        if ( currentoffhand != "none" )
+			{
+	            self givemaxammo( currentoffhand );
+		    }
         }
         wait 0.02;
     }

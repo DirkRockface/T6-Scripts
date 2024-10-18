@@ -12,9 +12,9 @@
 #include maps\mp\gametypes_zm\_hud_message;
 #include scripts\zm\dirk_bank;
 #include scripts\zm\dirk_box;
+#include scirpts\zm\dirk_pause;
 
-
-init() // entry point
+init()
 {
     level endon( "end_game" );
     level thread onplayerconnect();
@@ -137,11 +137,13 @@ give_the_prize(lang)
 {
     if(self.dice_result > 97)
         self winWeapon( "raygun_mark2_zm" );
-    else if(self.dice_result > 92)
+    else if(self.dice_result > 93)
         self winWeapon( "rpd_zm" );
-    else if(self.dice_result > 87)
+    else if(self.dice_result > 89)
         self winWeapon( "hamr_zm" );
-    else if(self.dice_result > 82)
+    else if(self.dice_result > 85)
+        self winWeapon( "galil_zm");
+    else if(self.dice_result > 81)
         self winWeapon( "cymbal_monkey_zm" );
     else if(self.dice_result > 77)
         self winOtherPrize(lang, 2); //freedom
@@ -163,12 +165,6 @@ give_the_prize(lang)
         self winPoints(500);
     else if(self.dice_result == 0)
         self winOtherPrize(lang, 0); //death
-    //{
-        //play_sound_at_pos( "grab_metal_bar", self.origin );
-        //self.health = 1;
-        //earthquake(0.6,10,self.origin,100000);
-        //self winOtherPrize(2); //longpause
-    //}  
     else
     {
         foreach (player in level.players)
@@ -178,22 +174,33 @@ give_the_prize(lang)
 
 winOtherPrize(lang, prize)
 {
-    if(prize==0) //death
+    if(prize==0) //pain
     {
+        self.can_i_pause = false;
         foreach (player in level.players)
-            player iprintln("^4<(^3DRF^4)>^2" + self.name + "^7 rolled a ^10 ^7and now has to die!");
+            player iprintln("^4<(^3DRF^4)>^2" + self.name + "^7 rolled a ^10 ^7and now must pay for 30 seconds!");
         wait 2;
-        if(level.players.size > 1)
-        {
-            self dodamage(self.health, self.origin);
-        }
-        else
-        {
-            if(lang=="spanish")
-                self iprintln("^4<(^3DRF^4)>^7Olvídalo... no hay nadie que te reviva!");
-            else
-                self iprintln("^4<(^3DRF^4)>^7Never mind... there's no one to revive you!");
-        }
+//        if(level.players.size > 1)
+//        {
+            self.paincounter = 0;
+            while(self.paincounter < 300)
+            {
+                if(self.health>20)
+                    self.health=20;
+                if(self.paincounter%20==0)
+                    self dodamage(1, self.origin);
+                self.paincounter++;
+                wait .1;
+            }
+            self.can_i_pause = true;
+//        }
+//        else
+//        {
+//            if(lang=="spanish")
+//                self iprintln("^4<(^3DRF^4)>^7Olvídalo... no hay nadie que te reviva!");
+//            else
+//                self iprintln("^4<(^3DRF^4)>^7Never mind... there's no one to revive you!");
+//        }
 
     }
     else if(prize==1) //longpause

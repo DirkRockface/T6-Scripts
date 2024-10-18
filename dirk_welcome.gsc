@@ -10,6 +10,9 @@
 #include maps\mp\zombies\_zm_laststand;
 #include maps\mp\zombies\_zm_weapons;
 #include maps\mp\gametypes_zm\_hud_message;
+#include maps\mp\zombies\_zm_stats;
+#include maps\mp\zombies\_zm_audio;
+#include maps\mp\zombies\_zm_score;
 
 #define FOG_OFF 0
 #define FOG_ON 1
@@ -17,7 +20,7 @@
 #define WAIT_TIME_SHORT 2
 #define WAIT_TIME_LONG 15
 
-init() // entry point
+init()
 {
     level thread onplayerconnect();
 }
@@ -74,7 +77,7 @@ display_help(player, lang)
         wait WAIT_TIME_SHORT;
         player iprintln("^4<(^3DRF^4)>^7type ^3.fog ^7to toggle fog on/off");
         wait WAIT_TIME_SHORT;
-        player iprintln("^4<(^3DRF^4)>^7type ^3.afk ^7to pause game for you");
+        player iprintln("^4<(^3DRF^4)>^7type ^3.afk ^7to pause the game for you");
     }
 }
 
@@ -219,6 +222,3 @@ toggle_fog(player)
     player.isfoggy = !player.isfoggy;
     player setclientdvar("r_fog", player.isfoggy ? FOG_ON : FOG_OFF);
 }
-
-//make a shop
-//fine tune casino odds and prizes

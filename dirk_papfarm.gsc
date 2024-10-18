@@ -26,8 +26,8 @@ extra_perk_spawns() //custom function
 		level.farmPerkArray = array( "specialty_weapupgrade" );
 
 		level.farmPerks["specialty_weapupgrade"] = spawnstruct();
-		level.farmPerks["specialty_weapupgrade"].origin = (7996, -5730, 13);
-		level.farmPerks["specialty_weapupgrade"].angles = (0,270,0);
+		level.farmPerks["specialty_weapupgrade"].origin = (8507, -5600, 50);
+		level.farmPerks["specialty_weapupgrade"].angles = (0,0,0);
 		level.farmPerks["specialty_weapupgrade"].model = "p6_anim_zm_buildable_pap_on";
 		level.farmPerks["specialty_weapupgrade"].script_noteworthy = "specialty_weapupgrade";
 	}
@@ -117,7 +117,7 @@ perk_machine_spawn_init_override() //modified function
 	for ( i = 0; i < pos.size; i++ )
 	{
 		perk = pos[ i ].script_noteworthy;
-		//added for grieffix gun game
+
 		if ( IsDefined( perk ) && IsDefined( pos[ i ].model ) )
 		{
 			use_trigger = Spawn( "trigger_radius_use", pos[ i ].origin + ( 0, 0, 30 ), 0, 40, 70 );
