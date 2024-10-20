@@ -131,9 +131,9 @@ commandthread()
 			case ".pausar":
 				player thread go_afk("spanish", 60, 0);
 				break;
-			case ".testing":
-				player thread go_afk("english", 600, 0);
-				break;
+//			case ".testing":
+//				player thread go_afk("english", 600, -1);
+//				break;
             case ".back":
 			case ".reanudar":
 				player thread back_afk();

@@ -23,6 +23,7 @@ onplayerconnect()
     for(;;)
     {
         level waittill("connected", player);
+        player thread showleaderboard();
         player thread onplayerspawned();
     }
 }
@@ -38,7 +39,100 @@ onplayerspawned()
     }
 }
 
+showleaderboard()
+{
+    self endon("disconnect");
 
+
+    self.hiallkillline = "";
+    self.hiallkillname = leader_name_read("all", 1);
+    if(self.hiallkillname=="noleadername")
+        self.hiallkillline = "Kill Leader all maps: ^2Nobody yet";
+    else
+    {
+        self.hiallkillnumber = leader_kill_read("all", 1);
+        self.hiallkillline = "Kill Leader all maps:       ^2" + self.hiallkillname + "^7 -> ^3" + self convert_to_thousands(self.hiallkillnumber) + " kills^7";
+    }
+
+    self.myallkillline = "";
+    self.myallkillrank = rank_read("all");
+    if(self.myallkillrank=="norank")
+        self.myallkillline = "    You have no rank yet";
+    else
+    {
+        self.myallkillnumber = all_kill_read();
+        self.myallkillline = "    You rank ^3" + self.myallkillrank + "^7 with ^3" + self convert_to_thousands(self.myallkillnumber) + " kills^7";
+    }
+    
+    self.hikillline = "";
+    self.hikillname = leader_name_read("map", 1);
+    if(self.hikillname=="noleadername")
+        self.hikillline = "Kill Leader this map: ^2Nobody yet";
+    else
+    {
+        self.hikillnumber = leader_kill_read("map", 1);
+        self.hikillline = "Kill Leader this map:       ^2" + self.hikillname + "^7 -> ^3" + self convert_to_thousands(self.hikillnumber) + " kills^7";
+    }
+
+    self.mykillline = "";
+    self.mykillrank = rank_read("map");
+    if(self.mykillrank=="norank")
+        self.mykillline = "    You have no rank yet";
+    else
+    {
+        self.mykillnumber = map_kill_read();
+        self.mykillline = "    You rank ^3" + self.mykillrank + "^7 with ^3" + self convert_to_thousands(self.mykillnumber) + " kills^7";
+    }
+
+    self.hiroundline = "";
+    self.hiroundname = leader_roundname_read("map", 1);
+    if(self.hiroundname=="noleadername")
+        self.hiroundline = "Round Leader this map: ^2Nobody yet";
+    else
+    {
+        self.hiroundnumber = leader_round_read("map", 1);
+        self.hiroundline = "Round Leader this map: ^2" + self.hiroundname + "^7 -> ^3Round " + self.hiroundnumber + "^7";
+    }
+
+    self.myroundline = "";
+    self.myhighround = map_round_read();
+    self.myroundline = "    Your high round is ^3" + self.myhighround + "^7";
+
+
+	self.leaderboard = newClientHudElem(self);
+    self.leaderboard.alignx = "left";
+    self.leaderboard.aligny = "top";
+    self.leaderboard.horzalign = "user_left";
+    self.leaderboard.vertalign = "user_top";
+    self.leaderboard.x = 5;
+    self.leaderboard.y = 38;
+    self.leaderboard.fontscale = 1;
+	self.leaderboard.alpha = 0;
+    self.leaderboard.color = ( 1, 1, 1 );
+	self.leaderboard.hidewheninmenu = 1;
+
+    self.leaderboard2 = newClientHudElem(self);
+    self.leaderboard2.alignx = "left";
+    self.leaderboard2.aligny = "top";
+    self.leaderboard2.horzalign = "user_left";
+    self.leaderboard2.vertalign = "user_top";
+    self.leaderboard2.x = 5;
+    self.leaderboard2.y = 85;
+    self.leaderboard2.fontscale = 1;
+	self.leaderboard2.alpha = 0;
+    self.leaderboard2.color = ( 1, 1, 1 );
+	self.leaderboard2.hidewheninmenu = 1;
+
+	flag_wait( "initial_blackscreen_passed" );
+
+    self.leaderboard.alpha = 1;
+    self.leaderboard2.alpha = 2;
+    self.leaderboard setText("^4THIS SEASON'S LEADERBOARD:^7\n" + self.hiallkillline + "\n" + self.myallkillline + "\n" + self.hikillline);
+    self.leaderboard2 setText(self.mykillline + "\n" + self.hiroundline + "\n" + self.myroundline);
+    wait 22;
+	self.leaderboard destroy();
+    self.leaderboard2 destroy();
+}
 
 show_the_leaders(player, lang)
 {
@@ -47,7 +141,7 @@ show_the_leaders(player, lang)
     else
         player iprintln("^4<(^3DRF^4)>^7===^4<(^3DRF^4)>^7 Leaderboard this season===");
 
-    for (i = 1; i < 4; i++)
+    for (i = 1; i < 5; i++)
     {
         leader_names[i] = leader_name_read("all", i);
         if(leader_names[i]=="noleadername")
@@ -73,7 +167,7 @@ show_the_leaders(player, lang)
         player iprintln("^4<(^3DRF^4)>^7===Tabla de clasificación esta temporada para este mapa===");
     else
         player iprintln("^4<(^3DRF^4)>^7===Leaderboard this season for this map===");
-    for (i = 1; i < 4; i++)
+    for (i = 1; i < 5; i++)
     {
         map_leader_names[i] = leader_name_read("map", i);
         if(map_leader_names[i]=="noleadername")
@@ -99,7 +193,7 @@ show_the_leaders(player, lang)
         player iprintln("^4<(^3DRF^4)>^7===Ronda alta esta temporada para este mapa===");
     else
         player iprintln("^4<(^3DRF^4)>^7===High Round this season for this map===");
-    for (i = 1; i < 4; i++)
+    for (i = 1; i < 5; i++)
     {
         round_leader_names[i] = leader_roundname_read("map", i);
         if(round_leader_names[i]=="noleadername")
@@ -158,6 +252,12 @@ show_my_rank(player, lang)
         else
             player iprintln("^4<(^3DRF^4)>^7You rank ^3" + my_map_rank_string + "^7 on this map with ^2" + player convert_to_thousands(my_map_kill_count) + "^7 kills");
     }
+    wait 2.0;
+    my_map_round = player map_round_read();
+    if(lang=="spanish")
+        player iprintln("^4<(^3DRF^4)>^7Has llegado a la ronda ^2" + my_map_round + "^7 en este mapa esta temporada!");
+    else
+        player iprintln("^4<(^3DRF^4)>^7You have made it as high as round ^2" + my_map_round + "^7 on this map this season!");
     wait 1.5;
     if(lang=="spanish")
         player iprintln("^4<(^3DRF^4)>^7Las clasificaciones se actualizan cada 15 minutos.");

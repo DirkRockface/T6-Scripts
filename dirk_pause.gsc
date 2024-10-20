@@ -45,6 +45,13 @@ onplayerspawned()
 
 go_afk(lang, time, prize)
 {
+    if(prize==-1) //testing
+    {
+        if(self.can_i_pause)
+        {
+            self thread drawPauseTimer(time, lang, 99);
+        }
+    }
     if(prize==0)
     {
         if(self.numberofpausesleft < 1 && time==60)
@@ -65,8 +72,7 @@ go_afk(lang, time, prize)
         {
             if(self.can_i_pause)
             {
-                if(time==60)
-                    self.numberofpausesleft--;
+                self.numberofpausesleft--;
                 self thread drawPauseTimer(time, lang, 0);
             }
             else
@@ -160,7 +166,12 @@ drawPauseTimer(time, lang, special)
 
     self.pausetimer setTimer(time);
 
-    if(special == 0)
+    if(special == 99) //testing
+    {
+        self.gamestateone.label = &"^7                                You are testing for                                \n \n                           Type ^2.back ^7to return now.";
+    }
+
+    else if(special == 0)
     {
         self.gamestateone setValue(self.numberofpausesleft);
         if(lang == "spanish")

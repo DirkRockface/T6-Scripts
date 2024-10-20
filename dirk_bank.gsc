@@ -55,15 +55,15 @@ onplayerconnect()
 		if(!fileExists(maproundfile))
 			create_round_file(maproundfile);
 
-		all_kills = player all_kill_read();
-		map_kills = player map_kill_read();
-		map_round = player map_round_read();
-		wait 1.5;
-		player iprintln("^4<(^3DRF^4)>^7You have killed ^2" + player convert_to_thousands(all_kills) + "^7 zombies on ^4<(^3DRF^4)>^7 servers this season!");
-		wait 1.5;
-		player iprintln("^4<(^3DRF^4)>^7You have killed ^2" + player convert_to_thousands(map_kills) + "^7 zombies on this map this season!");
-		wait 1.5;
-		player iprintln("^4<(^3DRF^4)>^7You have made it as high as round ^2" + map_round + "^7 on this map this season!");
+//		all_kills = player all_kill_read();
+//		map_kills = player map_kill_read();
+//		map_round = player map_round_read();
+//		wait 2.0;
+//		player iprintln("^4<(^3DRF^4)>^7You have killed ^2" + player convert_to_thousands(all_kills) + "^7 zombies on ^4<(^3DRF^4)>^7 servers this season!");
+//		wait 2.0;
+//		player iprintln("^4<(^3DRF^4)>^7You have killed ^2" + player convert_to_thousands(map_kills) + "^7 zombies on this map this season!");
+//		wait 2.0;
+//		player iprintln("^4<(^3DRF^4)>^7You have made it as high as round ^2" + map_round + "^7 on this map this season!");
 	}
 }
 
