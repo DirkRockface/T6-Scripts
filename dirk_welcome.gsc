@@ -23,6 +23,7 @@
 init()
 {
     level thread onplayerconnect();
+    thread lock_server();
 }
 
 onplayerconnect()
@@ -32,6 +33,13 @@ onplayerconnect()
         level waittill("connected", player);
         player thread onplayerspawned();
         player thread display_welcome(player);
+
+        player setclientdvar( "r_lodBiasRigid", "-1000" );
+	    player setclientdvar( "r_lodBiasSkinned", "-1000" );
+	    player setclientdvar( "r_dof_enable", "0" );
+        player setclientdvar( "r_lodScaleSkinned", "1" );
+	    player setclientdvar( "r_lodScaleRigid", "1" );
+	    player setclientdvar( "r_forcelod", "0" );
     }
 }
 
@@ -45,6 +53,18 @@ onplayerspawned()
         self waittill("spawned_player");
         self setclientdvar("r_fog", FOG_OFF);   //No fog
         self.isfoggy=0;
+    }
+}
+
+lock_server()
+{
+    round = GetDvarIntDefault("lockroundnumber", 0);
+    if(round > 0 && getDvar("g_password") == "")
+    {
+        while(level.round_number < round)
+            wait 1.0;
+	    setDvar("g_password", getDvar("lockroundpassword"));
+	    setDvar("password", getDvar("lockroundpassword"));
     }
 }
 

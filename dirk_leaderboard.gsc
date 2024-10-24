@@ -90,8 +90,21 @@ showleaderboard()
         self.hiroundline = "Round Leader this map: ^2Nobody yet";
     else
     {
+        self.tempval = 2;
+        while (true)
+        {
+            self.hiroundnumber = leader_round_read("map", 1);
+            if(leader_round_read("map", self.tempval)==self.hiroundnumber)
+            {
+                self.hiroundname = self.hiroundname + ", " + leader_roundname_read("map", self.tempval);
+                self.tempval ++;
+            }
+            else
+                break;
+            wait 0.1;
+        }
         self.hiroundnumber = leader_round_read("map", 1);
-        self.hiroundline = "Round Leader this map: ^2" + self.hiroundname + "^7 -> ^3Round " + self.hiroundnumber + "^7";
+        self.hiroundline = "Round Leader(s) this map: ^2" + self.hiroundname + "^7 -> ^3Round " + self.hiroundnumber + "^7";
     }
 
     self.myroundline = "";

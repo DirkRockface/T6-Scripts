@@ -76,6 +76,7 @@ onplayerspawned()
         self waittill("spawned_player");
 		self.old_kill_total = 0;
 		self.new_kill_total = 0;
+		self.whendidijoin = level.round_number;
     }
 }
 
@@ -456,7 +457,7 @@ update_the_stats_round()
 		self iPrintLn( "^4<(^3DRF^4)>^7Added " + self.new_kill_total + " kills!");
 	}
 	if(level.earn_round_for_rank)
-		self round_update(level.round_number);
+		self round_update(level.round_number-self.whendidijoin);
 }
 
 withdraw_logic(player, amount)
