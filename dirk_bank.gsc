@@ -457,7 +457,27 @@ update_the_stats_round()
 		self iPrintLn( "^4<(^3DRF^4)>^7Added " + self.new_kill_total + " kills!");
 	}
 	if(level.earn_round_for_rank)
-		self round_update(level.round_number-self.whendidijoin);
+	{
+		if(isDefined(self.whendidijoin))
+		{
+			self round_update(level.round_number-self.whendidijoin);
+			print("Successfull whendidijoin");
+		}
+		else
+		{
+			print("WHEN DID I JOIN ERROR");
+			self.whendidijoin = level.round_number - 1;
+			print("Did it fix?");
+			print("It did! "+ self.whendidijoin);
+			if(isDefined(self.whendidijoin))
+				self round_update(level.round_number-self.whendidijoin);
+			else
+				print("It is still broken!");
+		}
+	}
+
+	//print("Level Round: " + level.round_number);
+	//print("Self Join: " + self.whendidijoin);
 }
 
 withdraw_logic(player, amount)
