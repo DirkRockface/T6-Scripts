@@ -65,6 +65,10 @@ lock_server()
             wait 1.0;
 	    setDvar("g_password", getDvar("lockroundpassword"));
 	    setDvar("password", getDvar("lockroundpassword"));
+
+        level waittill("end_game");
+	    setDvar("g_password", "");
+	    setDvar("password", "");
     }
 }
 
